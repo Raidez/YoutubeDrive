@@ -20,9 +20,6 @@ class Vector:
     def __truediv__(self, other: int):
         return Vector(self.x / other, self.y / other)
 
-class Byte(Enum):
-    pass
-
 PathLike = TypeVar("PathLike", str, bytes, os.PathLike, Path, None)
 ImageSize = TypeVar("ImageSize", tuple[int, int], Vector, None)
 
@@ -147,35 +144,8 @@ def decode_images2tar(sources: [PathLike], target: PathLike):
 ################################################################################
 
 if __name__ == '__main__':
-    # print("start encoding process")
-    # basename = Path('encode')
-    # source_dir = basename / 'source'
-    # target_dir = basename / 'target'
-    
-    # print("clean previous tests")
-    # rmtree(target_dir, ignore_errors=True)
-    # target_dir.mkdir()
-    
-    # print("create tar and encode to images")
-    # tarname = target_dir / 'target.tar'
-    # create_tar(source_dir, tarname)
-    # image_size = encode_tar2images(tarname, target_dir / 'target%num%.png')
-    
-    # print("encode tar to video")
-    # images = sorted(list(target_dir.glob('target*.png')))
-    # video = target_dir / 'target.mp4'
-    # encode_images2video(images, video, image_size)
-    
-    # # print("upload video")
-    # print("copy video")
-    # copy(video, 'decode/source/encoded.mp4')
-    
-    # print("done encoding process")
-    
-    ############################################################################
-    
-    print("start decoding process")
-    basename = Path('decode')
+    print("start encoding process")
+    basename = Path('encode')
     source_dir = basename / 'source'
     target_dir = basename / 'target'
     
@@ -183,13 +153,40 @@ if __name__ == '__main__':
     rmtree(target_dir, ignore_errors=True)
     target_dir.mkdir()
     
-    print("decode video to images")
-    decode_video2images(source_dir / 'encoded.mp4', target_dir / 'encoded%num%.png')
-    # decode_video2images(source_dir / 'download.mp4', target_dir / 'download%num%.png')
+    print("create tar and encode to images")
+    tarname = target_dir / 'target.tar'
+    create_tar(source_dir, tarname)
+    image_size = encode_tar2images(tarname, target_dir / 'target%num%.png')
     
-    print("decode images to tar")
-    decode_images2tar(target_dir / 'encoded*.png', target_dir / 'target.tar')
+    print("encode tar to video")
+    images = sorted(list(target_dir.glob('target*.png')))
+    video = target_dir / 'target.mp4'
+    encode_images2video(images, video, image_size)
     
-    # print("untar files")
+    # print("upload video")
+    print("copy video")
+    copy(video, 'decode/source/encoded.mp4')
     
-    print("done decoding process")
+    print("done encoding process")
+    
+    ############################################################################
+    
+    # print("start decoding process")
+    # basename = Path('decode')
+    # source_dir = basename / 'source'
+    # target_dir = basename / 'target'
+    
+    # print("clean previous tests")
+    # rmtree(target_dir, ignore_errors=True)
+    # target_dir.mkdir()
+    
+    # print("decode video to images")
+    # decode_video2images(source_dir / 'encoded.mp4', target_dir / 'encoded%num%.png')
+    # # decode_video2images(source_dir / 'download.mp4', target_dir / 'download%num%.png')
+    
+    # print("decode images to tar")
+    # decode_images2tar(target_dir / 'encoded*.png', target_dir / 'target.tar')
+    
+    # # print("untar files")
+    
+    # print("done decoding process")
