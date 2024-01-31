@@ -54,7 +54,7 @@ class BitEncoding(Encoding):
         im.save(output_path.replace('%num%', str(i)))
     
     @staticmethod
-    def decode(path: str, ignore_empty = True) -> bytes:
+    def decode(path: str) -> bytes:
         im = Image.open(path)
         
         out = bytearray()
@@ -63,8 +63,14 @@ class BitEncoding(Encoding):
             bits = data[i:i+8]
             bits = [1 if b == 255 else 0 for b in bits]
             byte = int(''.join(map(str, bits)), 2)
-            if ignore_empty and byte == 0:
-                break
             out.append(byte)
         
         return bytes(out)
+    
+    @staticmethod
+    def remove_endl(data: bytes) -> bytes:
+        for i in range(len(data) - 1, 0, -1):
+            if data[i] != 0:
+                break
+        
+        return bytes(data[:i+1])
