@@ -43,7 +43,6 @@ def cmp_tar(files: list[str]) -> bool:
                 'chksum': m.chksum
             })
     return diggests[0] == diggests[1]
-    
 
 ################################################################################
 
