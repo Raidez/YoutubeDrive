@@ -1,6 +1,4 @@
-from pathlib import Path
-from PIL import Image, ImageDraw
-# https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
+from PIL import Image
 
 def biter(b: int, step = 1):
     """
@@ -21,13 +19,30 @@ class Encoding:
     """
     @staticmethod
     def encode(data: bytes, image_size: tuple[int, int], output_path: str):
+        """
+        Encode data to image.
+
+        Args:
+            data (bytes): The data to encode.
+            image_size (tuple[int, int]): The size of the image.
+            output_path (str): The path to save the image.
+        """
         raise NotImplementedError
     
     @staticmethod
     def decode(path: str):
+        """
+        Decode image to data.
+
+        Args:
+            path (str): The path to the image.
+        """
         raise NotImplementedError
 
 class BitEncoding(Encoding):
+    """
+    Encode/decode byte data to image where 0 is black and 1 is white (binary).
+    """
     @staticmethod
     def encode(data: bytes, image_size: tuple[int, int], output_path: str):
         im = Image.new('1', image_size)
@@ -69,6 +84,15 @@ class BitEncoding(Encoding):
     
     @staticmethod
     def remove_endl(data: bytes) -> bytes:
+        """
+        Remove last empty block of data.
+
+        Args:
+            data (bytes): The data to process.
+
+        Returns:
+            bytes: The data without the last empty block.
+        """
         for i in range(len(data) - 1, 0, -1):
             if data[i] != 0:
                 break

@@ -1,10 +1,14 @@
+import pytest
+import shutil
 import filecmp
 import hashlib
+import cv2 as cv
 from pathlib import Path
 from utils import BitEncoding
 from tarfile import open as taropen
 
 SOURCE = Path('test/source')
+TARGET = Path('test/target')
 
 def cmp_hash(files: list[str]) -> bool:
     """
@@ -44,19 +48,27 @@ def cmp_tar(files: list[str]) -> bool:
             })
     return diggests[0] == diggests[1]
 
-################################################################################
+@pytest.fixture(scope='session', autouse=True)
+def teardown():
+    # before
+    yield
+    # after
+    shutil.rmtree(TARGET)
+    TARGET.mkdir()
+
+############################# encode file to image #############################
 
 def test_raw_text(tmp_path):
     data = b"hello world"
-    image_output = tmp_path / 'test%num%.png'
     image_size = (10, 10)
+    image_output = tmp_path / 'frame%num%.png'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('test*.png')):
+    for imagepath in sorted(tmp_path.glob('*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
@@ -65,20 +77,20 @@ def test_raw_text(tmp_path):
 
 def test_textfile(tmp_path):
     file_input = SOURCE / 'lorem.txt'
-    image_output = tmp_path / 'test%num%.png'
     data = file_input.read_bytes()
     image_size = (200, 200)
+    image_output = tmp_path / 'frame%num%.png'
+    file_output = tmp_path / 'lorem_decoded.txt'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('test*.png')):
+    for imagepath in sorted(tmp_path.glob('*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
-    file_output = tmp_path / 'lorem_decoded.txt'
     file_output.write_bytes(s)
     
     assert s == data
@@ -88,20 +100,20 @@ def test_textfile(tmp_path):
 
 def test_image(tmp_path):
     file_input = SOURCE / 'sonic.png'
-    image_output = tmp_path / 'test%num%.png'
     data = file_input.read_bytes()
     image_size = (1920, 1080)
+    image_output = tmp_path / 'frame%num%.png'
+    file_output = tmp_path / 'sonic_decoded.png'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('test*.png')):
+    for imagepath in sorted(tmp_path.glob('*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
-    file_output = tmp_path / 'sonic_decoded.png'
     file_output.write_bytes(s)
     
     assert s == data
@@ -110,20 +122,20 @@ def test_image(tmp_path):
 
 def test_pdf(tmp_path):
     file_input = SOURCE / 'movies.pdf'
-    image_output = tmp_path / 'test%num%.png'
     data = file_input.read_bytes()
     image_size = (400, 400)
+    image_output = tmp_path / 'frame%num%.png'
+    file_output = tmp_path / 'movies_decoded.pdf'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('test*.png')):
+    for imagepath in sorted(tmp_path.glob('*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
-    file_output = tmp_path / 'movies_decoded.pdf'
     file_output.write_bytes(s)
     
     assert s == data
@@ -132,19 +144,70 @@ def test_pdf(tmp_path):
 
 def test_archive(tmp_path):
     file_input = SOURCE / 'archive.tar'
-    image_output = tmp_path / 'test%num%.png'
     data = file_input.read_bytes()
     image_size = (1920, 1080)
+    image_output = tmp_path / 'frame%num%.png'
+    file_output = tmp_path / 'archive_decoded.tar'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('test*.png')):
+    for imagepath in sorted(tmp_path.glob('*.png')):
+        s += BitEncoding.decode(str(imagepath))
+    file_output.write_bytes(s)
+    
+    assert cmp_tar([file_input, file_output])
+
+############################# encode image to video ############################
+
+@pytest.fixture
+def images(tmp_path):
+    file_input = SOURCE / 'archive.tar'
+    data = file_input.read_bytes()
+    image_size = (1920, 1080)
+    image_output = tmp_path / 'frame%num%.png'
+    
+    BitEncoding.encode(data, image_size, str(image_output))
+    return sorted(tmp_path.glob('*.png'))
+
+def test_video(images, tmp_path):
+    tmp_path = TARGET
+    video_fps = 1
+    video_size = (1920, 1080)
+    video_output = tmp_path / 'video.avi'
+    video_codec = cv.VideoWriter_fourcc(*'RGBA')
+    image_output = tmp_path / 'frame%num%.png'
+    file_output = tmp_path / 'archive_decoded.tar'
+    file_input = SOURCE / 'archive.tar'
+    
+    # encode images to video
+    video = cv.VideoWriter(str(video_output), video_codec, video_fps, video_size)
+    for imagepath in images:
+        frame = cv.imread(str(imagepath))
+        video.write(frame)
+    video.release()
+    
+    # decode video to images
+    cap = cv.VideoCapture(str(video_output))
+    if not cap.isOpened(): raise Exception("Can't open video")
+    
+    i = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret: break
+        
+        cv.imwrite(str(image_output).replace('%num%', str(i)), frame)
+        i += 1
+    
+    cap.release()
+    
+    # decode archive
+    s = bytes()
+    for imagepath in sorted(tmp_path.glob('*.png')):
         s += BitEncoding.decode(str(imagepath))
     
-    file_output = tmp_path / 'archive_decoded.tar'
     file_output.write_bytes(s)
     
     assert cmp_tar([file_input, file_output])
