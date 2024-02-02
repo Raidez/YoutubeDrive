@@ -2,9 +2,8 @@ import pytest
 import shutil
 import filecmp
 import hashlib
-import cv2 as cv
 from pathlib import Path
-from utils import BitEncoding
+from utils import BitEncoding, VideoEncoding
 from tarfile import open as taropen
 
 SOURCE = Path('test/source')
@@ -68,7 +67,7 @@ def test_raw_text(tmp_path):
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('*.png')):
+    for imagepath in sorted(tmp_path.glob('frame*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
@@ -80,14 +79,14 @@ def test_textfile(tmp_path):
     data = file_input.read_bytes()
     image_size = (200, 200)
     image_output = tmp_path / 'frame%num%.png'
-    file_output = tmp_path / 'lorem_decoded.txt'
+    file_output = tmp_path / 'lorem.txt'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('*.png')):
+    for imagepath in sorted(tmp_path.glob('frame*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
@@ -103,14 +102,14 @@ def test_image(tmp_path):
     data = file_input.read_bytes()
     image_size = (1920, 1080)
     image_output = tmp_path / 'frame%num%.png'
-    file_output = tmp_path / 'sonic_decoded.png'
+    file_output = tmp_path / 'sonic.png'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('*.png')):
+    for imagepath in sorted(tmp_path.glob('frame*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
@@ -125,14 +124,14 @@ def test_pdf(tmp_path):
     data = file_input.read_bytes()
     image_size = (400, 400)
     image_output = tmp_path / 'frame%num%.png'
-    file_output = tmp_path / 'movies_decoded.pdf'
+    file_output = tmp_path / 'movies.pdf'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('*.png')):
+    for imagepath in sorted(tmp_path.glob('frame*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     s = BitEncoding.remove_endl(s)
@@ -147,14 +146,14 @@ def test_archive(tmp_path):
     data = file_input.read_bytes()
     image_size = (1920, 1080)
     image_output = tmp_path / 'frame%num%.png'
-    file_output = tmp_path / 'archive_decoded.tar'
+    file_output = tmp_path / 'archive.tar'
     
     # encode
     BitEncoding.encode(data, image_size, str(image_output))
     
     # decode
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('*.png')):
+    for imagepath in sorted(tmp_path.glob('frame*.png')):
         s += BitEncoding.decode(str(imagepath))
     file_output.write_bytes(s)
     
@@ -167,45 +166,25 @@ def images(tmp_path):
     file_input = SOURCE / 'archive.tar'
     data = file_input.read_bytes()
     image_size = (1920, 1080)
-    image_output = tmp_path / 'frame%num%.png'
+    image_output = tmp_path / 'original-frame%num%.png'
     
     BitEncoding.encode(data, image_size, str(image_output))
-    return sorted(tmp_path.glob('*.png'))
+    return sorted(tmp_path.glob('original-frame*.png'))
 
-def test_video(images, tmp_path):
-    tmp_path = TARGET
-    video_fps = 1
+def test_raw_video(images, tmp_path):
     video_size = (1920, 1080)
     video_output = tmp_path / 'video.avi'
-    video_codec = cv.VideoWriter_fourcc(*'RGBA')
     image_output = tmp_path / 'frame%num%.png'
-    file_output = tmp_path / 'archive_decoded.tar'
+    file_output = tmp_path / 'archive.tar'
     file_input = SOURCE / 'archive.tar'
     
-    # encode images to video
-    video = cv.VideoWriter(str(video_output), video_codec, video_fps, video_size)
-    for imagepath in images:
-        frame = cv.imread(str(imagepath))
-        video.write(frame)
-    video.release()
-    
-    # decode video to images
-    cap = cv.VideoCapture(str(video_output))
-    if not cap.isOpened(): raise Exception("Can't open video")
-    
-    i = 0
-    while True:
-        ret, frame = cap.read()
-        if not ret: break
-        
-        cv.imwrite(str(image_output).replace('%num%', str(i)), frame)
-        i += 1
-    
-    cap.release()
+    # encode/decode video
+    VideoEncoding.encode(map(str, images), video_size, str(video_output))
+    VideoEncoding.decode(str(video_output), str(image_output))
     
     # decode archive
     s = bytes()
-    for imagepath in sorted(tmp_path.glob('*.png')):
+    for imagepath in sorted(tmp_path.glob('frame*.png')):
         s += BitEncoding.decode(str(imagepath))
     
     file_output.write_bytes(s)

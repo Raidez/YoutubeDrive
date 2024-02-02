@@ -1,3 +1,4 @@
+import cv2 as cv
 from PIL import Image
 
 def biter(b: int, step = 1):
@@ -98,3 +99,36 @@ class BitEncoding(Encoding):
                 break
         
         return bytes(data[:i+1])
+
+class VideoEncoding:
+    """
+    Encode/decode images to video.
+    """
+    @staticmethod
+    def encode(images: list[str], video_size: tuple[int, int], output_path: str):
+        video_codec = cv.VideoWriter_fourcc(*'RGBA')
+        video = cv.VideoWriter(output_path, video_codec, 1, video_size)
+        for imagepath in images:
+            frame = cv.imread(imagepath)
+            video.write(frame)
+        video.release()
+    
+    @staticmethod
+    def decode(path: str, image_output: str):
+        cap = cv.VideoCapture(path)
+        if not cap.isOpened(): raise Exception("Can't open video")
+        
+        i = 0
+        while True:
+            ret, frame = cap.read()
+            if not ret: break
+            
+            # convert color space to RGB
+            frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            
+            # same result but Pillow version produce images with less size (very slight)
+            # cv.imwrite(image_output.replace('%num%', str(i)), frame)
+            Image.fromarray(frame).save(image_output.replace('%num%', str(i)), 'PNG')
+            i += 1
+        
+        cap.release()
