@@ -1,4 +1,6 @@
+import copy
 import cv2 as cv
+import numpy as np
 from PIL import Image
 
 def biter(b: int, step = 1):
@@ -119,6 +121,7 @@ class VideoEncoding:
         if not cap.isOpened(): raise Exception("Can't open video")
         
         i = 0
+        last_frame = None
         while True:
             ret, frame = cap.read()
             if not ret: break
@@ -126,8 +129,12 @@ class VideoEncoding:
             # convert color space to RGB
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             
-            # same result but Pillow version produce images with less size (very slight)
-            # cv.imwrite(image_output.replace('%num%', str(i)), frame)
+            # don't save duplicate frames
+            if type(last_frame) is np.ndarray and np.array_equal(frame, last_frame):
+                continue
+            
+            # save frame
+            last_frame = copy.deepcopy(frame)
             Image.fromarray(frame).save(image_output.replace('%num%', str(i)), 'PNG')
             i += 1
         

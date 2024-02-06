@@ -190,3 +190,22 @@ def test_raw_video(images, tmp_path):
     file_output.write_bytes(s)
     
     assert cmp_tar([file_input, file_output])
+
+def test_upload_video(tmp_path):
+    tmp_path = TARGET
+    video_input = SOURCE / 'video_360p.mp4'
+    file_input = SOURCE / 'archive.tar'
+    image_output = tmp_path / 'frame%num%.png'
+    file_output = tmp_path / 'archive.tar'
+    
+    # decode video
+    VideoEncoding.decode(str(video_input), str(image_output))
+    
+    # decode archive
+    s = bytes()
+    for imagepath in sorted(tmp_path.glob('frame*.png')):
+        s += BitEncoding.decode(str(imagepath))
+    
+    file_output.write_bytes(s)
+    
+    assert cmp_tar([file_input, file_output])
