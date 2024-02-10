@@ -1,10 +1,13 @@
 import os
 import glob
+import math
 import numpy as np
 from PIL import Image
+from utils import BitEncoding
 
+image_scale = 1
+image_size = (10, 10)
 filename = "test%num%.png"
-image_size = (8, 8)
 image_length = image_size[0] * image_size[1]
 
 
@@ -23,37 +26,38 @@ for f in glob.glob("test*.png"):
 data = b"hello world"
 ndata = np.array(list(map(int, data)), dtype=np.uint8)
 ndata = np.unpackbits(ndata).reshape(-1, 8)
-ndata = numpy_zoom(ndata, 2).reshape(-1)
+ndata = numpy_zoom(ndata, image_scale).flatten()
 
-## split data by image_size
-nbchunk = 1
-nbchunk = ndata.size // image_length
-if rchunk := ndata.size % image_length:
+# split data by image_size
+nbchunk = math.ceil(ndata.size / image_length)
+if rchunk := int((nbchunk - ndata.size / image_length) * image_length):
     ndata = np.append(ndata, np.zeros(rchunk, dtype=np.uint8))
-    nbchunk = ndata.size // image_length
+    if nbchunk != ndata.size // image_length:
+        raise ValueError("Error when chunking data")
 
-# https://github.com/python-pillow/Pillow/issues/350
+# trick to numpy/pillow conversion https://stackoverflow.com/a/32159741
 ndatas = np.split(ndata, nbchunk)
 for i, ndata in enumerate(ndatas):
     ndata = ndata.reshape(image_size)
+    ndata *= 255
     im = Image.fromarray(ndata, mode="L").convert("1")
-    d = np.asarray(im.convert("L"))
-    print(d)
-    # im.save(filename.replace('%num%', str(i)), 'PNG')
+    im.save(filename.replace('%num%', str(i)), 'PNG')
 
-print("done")
+# decode image to array
+ndatas = list()
+for f in glob.glob("test*.png"):
+    im = Image.open(f)
+    ndata = np.asarray(im.convert("L"))
+    ndatas.append(ndata)
 
-# im = Image.fromarray(ndata)
-# im.save(filename)
+# decode array to byte
+data = bytearray()
+ndata = np.concatenate(*ndatas).flatten() // 255
+ndata = np.resize(ndata, (ndata.size // 8, 8))
+for bits in ndata:
+    byte = int("".join(map(str, bits)), 2)
+    data.append(byte)
 
-# # decode image
-# im = Image.open(filename)
-# ndata = np.asarray(im, dtype=np.uint8)
-# ndata = numpy_zoom(ndata, -2)
-
-# data = bytearray()
-# for bits in ndata:
-#     byte = int("".join(map(str, bits)), 2)
-#     data.append(byte)
-
-# print(data)
+# remove endl
+data = BitEncoding.remove_endl(data)
+print(data)
