@@ -31,23 +31,6 @@ def fourcc(name: str):
     return getattr(cv, "VideoWriter_fourcc")(*name)
 
 
-def numpy_zoom(array: np.ndarray, factor: int) -> np.ndarray:
-    """
-    Zoom in/out an array.
-
-    Args:
-        array (np.ndarray): The array.
-        factor (int): The scale factor (use negative value to zoom out).
-
-    Returns
-        np.ndarray: The zoomed array.
-    """
-    if factor >= 0:
-        return np.repeat(np.repeat(array, factor, axis=0), factor, axis=1)
-    else:
-        return array[:: abs(factor), :: abs(factor)]
-
-
 class Encoding:
     """
     Encode/decode byte data to image.
@@ -81,65 +64,43 @@ class BitEncoding(Encoding):
     Encode/decode byte data to image where 0 is black and 1 is white (binary).
     """
 
-    BITSIZE = 4
-
     @staticmethod
     def encode(data: bytes, image_size: tuple[int, int], output_path: str):
-        # check if image_size is a multiple of BITSIZE
-        if (
-            image_size[0] % BitEncoding.BITSIZE != 0
-            or image_size[1] % BitEncoding.BITSIZE != 0
-        ):
-            raise ValueError(
-                f"image_size ({image_size}) must be a multiple of {BitEncoding.BITSIZE}"
-            )
-
-        ndata = np.array(list(map(int, data)), dtype=np.uint8)
-        ndata = np.unpackbits(ndata).reshape(-1, 8)
-        ndata = numpy_zoom(ndata, BitEncoding.BITSIZE)
-
-        im = Image.fromarray(ndata, "1")
-        draw = ImageDraw.Draw(im)
-
-        # TODO: use numpy manipulation instead of naive rectangle
+        im = Image.new('1', image_size)
+    
         i, x, y = 0, 0, 0
-        dx, dy = BitEncoding.BITSIZE
         for byte in data:
             for bit in reversed(list(biter(byte))):
-                draw.rectangle((x, y, x + dx, y + dy), fill=bit)
-                x += dx
-
+                im.putpixel((x, y), bit)
+                
+                x += 1
+                
                 # next row
                 if x >= image_size[0]:
                     x = 0
-                    y += dy
-
+                    y += 1
+                
                 # next image
                 if y >= image_size[1]:
-                    im.save(output_path.replace("%num%", str(i)))
-                    im = Image.new("1", image_size)
-                    draw = ImageDraw.Draw(im)
+                    im.save(output_path.replace('%num%', str(i)))
+                    im = Image.new('1', image_size)
                     x, y = 0, 0
                     i += 1
-
-        im.save(output_path.replace("%num%", str(i)))
+        
+        im.save(output_path.replace('%num%', str(i)))
 
     @staticmethod
     def decode(path: str) -> bytes:
         im = Image.open(path)
-        # TODO: use numpy manipulation instead of naive image resize
-        im = im.resize(
-            (im.size[0] // BitEncoding.BITSIZE[0], im.size[1] // BitEncoding.BITSIZE[1])
-        )
-
+        
         out = bytearray()
         data = list(im.getdata())
         for i in range(0, len(data), 8):
-            bits = data[i : i + 8]
+            bits = data[i:i+8]
             bits = [1 if b == 255 else 0 for b in bits]
-            byte = int("".join(map(str, bits)), 2)
+            byte = int(''.join(map(str, bits)), 2)
             out.append(byte)
-
+        
         return bytes(out)
 
     @staticmethod

@@ -59,7 +59,7 @@ def teardown():
 
 def test_raw_text(tmp_path):
     data = b"hello world"
-    image_size = (40, 40)
+    image_size = (10, 10)
     image_output = tmp_path / "frame%num%.png"
 
     # encode
