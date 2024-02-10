@@ -21,9 +21,10 @@ def cmp_hash(files: list[str]) -> bool:
     """
     diggests = []
     for filename in files:
-        diggests.append(
-            hashlib.md5(filename.read_bytes()).hexdigest()
-        )
+        with open(filename, 'rb') as f:
+            diggests.append(
+                hashlib.md5(f.read()).hexdigest()
+            )
     return diggests[0] == diggests[1]
 
 def cmp_tar(files: list[str]) -> bool:
@@ -95,7 +96,7 @@ def test_textfile(tmp_path):
     assert s == data
     assert s.decode() == data.decode()
     assert filecmp.cmp(file_input, file_output)
-    assert cmp_hash([file_input, file_output])
+    assert cmp_hash([str(file_input), file_output])
 
 def test_image(tmp_path):
     file_input = SOURCE / 'sonic.png'
@@ -117,7 +118,7 @@ def test_image(tmp_path):
     
     assert s == data
     assert filecmp.cmp(file_input, file_output)
-    assert cmp_hash([file_input, file_output])
+    assert cmp_hash([str(file_input), file_output])
 
 def test_pdf(tmp_path):
     file_input = SOURCE / 'movies.pdf'
@@ -139,7 +140,7 @@ def test_pdf(tmp_path):
     
     assert s == data
     assert filecmp.cmp(file_input, file_output)
-    assert cmp_hash([file_input, file_output])
+    assert cmp_hash([str(file_input), file_output])
 
 def test_archive(tmp_path):
     file_input = SOURCE / 'archive.tar'
@@ -157,7 +158,7 @@ def test_archive(tmp_path):
         s += BitEncoding.decode(str(imagepath))
     file_output.write_bytes(s)
     
-    assert cmp_tar([file_input, file_output])
+    assert cmp_tar([str(file_input), file_output])
 
 ############################# encode image to video ############################
 
@@ -169,7 +170,7 @@ def images(tmp_path):
     image_output = tmp_path / 'original-frame%num%.png'
     
     BitEncoding.encode(data, image_size, str(image_output))
-    return sorted(tmp_path.glob('original-frame*.png'))
+    return map(str, sorted(tmp_path.glob('original-frame*.png')))
 
 def test_raw_video(images, tmp_path):
     video_size = (1920, 1080)
@@ -179,7 +180,7 @@ def test_raw_video(images, tmp_path):
     file_input = SOURCE / 'archive.tar'
     
     # encode/decode video
-    VideoEncoding.encode(map(str, images), video_size, str(video_output))
+    VideoEncoding.encode(images, video_size, str(video_output))
     VideoEncoding.decode(str(video_output), str(image_output))
     
     # decode archive
@@ -189,7 +190,7 @@ def test_raw_video(images, tmp_path):
     
     file_output.write_bytes(s)
     
-    assert cmp_tar([file_input, file_output])
+    assert cmp_tar([str(file_input), file_output])
 
 def test_upload_video(tmp_path):
     tmp_path = TARGET
@@ -208,4 +209,4 @@ def test_upload_video(tmp_path):
     
     file_output.write_bytes(s)
     
-    assert cmp_tar([file_input, file_output])
+    assert cmp_tar([str(file_input), str(file_output)])

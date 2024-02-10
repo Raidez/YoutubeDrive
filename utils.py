@@ -16,6 +16,18 @@ def biter(b: int, step = 1):
     for i in range(0, 8, step):
         yield b >> i & 1
 
+def fourcc(name: str):
+    """
+    Get the fourcc code for a codec name.
+
+    Args:
+        name (str): The name of the codec.
+
+    Returns:
+        str: The fourcc code.
+    """
+    return getattr(cv, 'VideoWriter_fourcc')(*name)
+
 class Encoding:
     """
     Encode/decode byte data to image.
@@ -96,6 +108,7 @@ class BitEncoding(Encoding):
         Returns:
             bytes: The data without the last empty block.
         """
+        i = 0
         for i in range(len(data) - 1, 0, -1):
             if data[i] != 0:
                 break
@@ -108,7 +121,7 @@ class VideoEncoding:
     """
     @staticmethod
     def encode(images: list[str], video_size: tuple[int, int], output_path: str):
-        video_codec = cv.VideoWriter_fourcc(*'RGBA')
+        video_codec = fourcc('RGBA')
         video = cv.VideoWriter(output_path, video_codec, 1, video_size)
         for imagepath in images:
             frame = cv.imread(imagepath)
