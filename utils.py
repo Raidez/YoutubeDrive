@@ -1,4 +1,5 @@
 import copy
+import math
 import cv2 as cv
 import numpy as np
 from PIL import Image, ImageDraw
@@ -162,3 +163,82 @@ class VideoEncoding:
             i += 1
 
         cap.release()
+
+
+class NumpyBitEncoding(Encoding):
+    """
+    Encode/decode byte data to image where 0 is black and 1 is white (binary).
+    """
+
+    @staticmethod
+    def encode(data: bytes, image_size: tuple[int, int], output_path: str):
+        image = np.zeros(image_size, dtype=np.uint8)
+
+        # encode data to image
+        ndata = np.array(list(map(int, data)), dtype=np.uint8)
+        ndata = np.unpackbits(ndata).reshape(-1, 8)
+
+        # use case
+        ndatas = list()
+        if ndata.size < image.size:
+            # if data is smaller than image
+            # flatten data and fill remaining space with 0
+            ndata = ndata.flatten()
+            ndata = np.append(ndata, np.zeros(image.size - ndata.size, dtype=np.uint8))
+            ndatas.append(ndata)
+        elif ndata.size > image.size:
+            # if data is bigger than image
+            # split data to chunks of image_size
+            ndata = ndata.flatten()
+            nbchunk = math.ceil(ndata.size / image.size)
+
+            ## fill remaining space with 0
+            if rchunk := round((nbchunk - ndata.size / image.size) * image.size):
+                ndata = np.append(ndata, np.zeros(rchunk, dtype=np.uint8))
+                if nbchunk != ndata.size // image.size:
+                    raise ValueError("Error when chunking data")
+
+            ndatas = np.split(ndata, nbchunk)
+
+        # convert data chunks to image
+        for i, ndata in enumerate(ndatas):
+            ndata = ndata.reshape(image.shape)
+            ndata *= 255
+            im = Image.fromarray(ndata, mode="L").convert("1")
+            im.save(str(output_path).replace("%num%", str(i)), "PNG")
+
+    @staticmethod
+    def decode(*paths: str) -> bytes:
+        # decode image to chunk array
+        ndatas = list()
+        for f in paths:
+            im = Image.open(f)
+            ndata = np.asarray(im.convert("L"))
+            ndata = ndata // 255
+            ndatas.append(ndata)
+
+        # decode array to byte
+        ndata = np.concatenate(ndatas)
+        ndata = ndata.flatten()
+        ndata = np.packbits(ndata)
+        s = ndata.tobytes()
+
+        return s
+
+    @staticmethod
+    def remove_endl(data: bytes) -> bytes:
+        """
+        Remove last empty block of data.
+
+        Args:
+            data (bytes): The data to process.
+
+        Returns:
+            bytes: The data without the last empty block.
+        """
+        i = 0
+        for i in range(len(data) - 1, 0, -1):
+            if data[i] != 0:
+                break
+
+        return bytes(data[: i + 1])

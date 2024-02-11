@@ -5,7 +5,7 @@ import math
 import pytest
 import numpy as np
 from PIL import Image
-from utils import BitEncoding
+from utils import NumpyBitEncoding
 
 # TODO: implement image scaling
 # TODO: use RGB for bits encoding
@@ -85,7 +85,7 @@ def test_smaller(tmp_path):
     s = ndata.tobytes()
 
     # remove endl
-    s = BitEncoding.remove_endl(s)
+    s = NumpyBitEncoding.remove_endl(s)
     assert s == data
     assert s.decode() == data.decode()
 
@@ -158,7 +158,7 @@ def test_bigger(tmp_path):
     s = ndata.tobytes()
 
     # remove endl
-    s = BitEncoding.remove_endl(s)
+    s = NumpyBitEncoding.remove_endl(s)
     assert s == data
     assert s.decode() == data.decode()
 
@@ -222,6 +222,6 @@ def test_weirder(tmp_path):
     s = ndata.tobytes()
 
     # remove endl
-    s = BitEncoding.remove_endl(s)
+    s = NumpyBitEncoding.remove_endl(s)
     assert s == data
     assert s.decode() == data.decode()
