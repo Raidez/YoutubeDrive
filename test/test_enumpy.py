@@ -13,14 +13,14 @@ from utils import NumpyBitEncoding
 
 def numpy_rescale(array: np.ndarray, factor: int) -> np.ndarray:
     """
-    Zoom an array.
+    Rescale an array.
 
     Args:
-        array (np.ndarray): The array to zoom.
-        factor (int): The zoom factor (negative to zoom out).
+        array (np.ndarray): The array to rescale.
+        factor (int): The rescale factor (negative to zoom out).
 
     Returns:
-        np.ndarray: The zoomed array.
+        np.ndarray: The rescaled array.
     """
     if factor >= 0:
         return np.repeat(np.repeat(array, factor, axis=0), factor, axis=1)
@@ -29,6 +29,64 @@ def numpy_rescale(array: np.ndarray, factor: int) -> np.ndarray:
 
 
 ################################################################################
+
+
+@pytest.fixture
+def arrays():
+    array1x = np.array(
+        [
+            [1, 0, 1],
+            [0, 1, 0],
+            [1, 0, 1],
+        ]
+    )
+    array3x = np.array(
+        [
+            [1, 1, 1, 0, 0, 1, 1, 1],
+            [1, 1, 1, 0, 0, 1, 1, 1],
+            [1, 1, 1, 0, 0, 1, 1, 1],
+            [0, 0, 0, 1, 1, 0, 0, 0],
+            [0, 0, 0, 1, 1, 0, 0, 0],
+            [1, 1, 1, 0, 0, 1, 1, 1],
+            [1, 1, 1, 0, 0, 1, 1, 1],
+            [1, 1, 1, 0, 0, 1, 1, 1],
+        ]
+    )
+    array5x = np.array(
+        [
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+        ]
+    )
+
+    return {
+        "1x": array1x,
+        "3x": array3x,
+        "5x": array5x,
+    }
+
+
+def test_rescale(arrays):
+    array = np.copy(arrays["1x"])
+    array = numpy_rescale(array, 5)
+    assert np.all(array == arrays["5x"])
+    array = numpy_rescale(array, -2)
+    assert np.all(array == arrays["3x"])
+    array = numpy_rescale(array, -3)
+    assert np.all(array == arrays["1x"])
 
 
 def test_smaller(tmp_path):
