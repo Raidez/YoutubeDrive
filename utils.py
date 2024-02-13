@@ -172,7 +172,7 @@ class NumpyBitEncoding(Encoding):
 
     @staticmethod
     def encode(data: bytes, image_size: tuple[int, int], output_path: str):
-        image = np.zeros(image_size, dtype=np.uint8)
+        image = np.zeros(image_size, dtype=np.uint8).T  # inverse x and y axis
 
         # encode data to image
         ndata = np.array(list(map(int, data)), dtype=np.uint8)
@@ -192,7 +192,7 @@ class NumpyBitEncoding(Encoding):
             ndata = ndata.flatten()
             nbchunk = math.ceil(ndata.size / image.size)
 
-            ## fill remaining space with 0
+            # fill remaining space with 0
             if rchunk := round((nbchunk - ndata.size / image.size) * image.size):
                 ndata = np.append(ndata, np.zeros(rchunk, dtype=np.uint8))
                 if nbchunk != ndata.size // image.size:

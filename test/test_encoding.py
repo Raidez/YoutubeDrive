@@ -50,8 +50,7 @@ def teardown():
     # before
     yield
     # after
-    shutil.rmtree(TARGET)
-    TARGET.mkdir()
+    [f.unlink() for f in TARGET.glob("[!.]*")]
 
 
 ############################# encode file to image #############################
@@ -175,10 +174,9 @@ def images(tmp_path):
     image_output = tmp_path / "original-frame%num%.png"
 
     NumpyBitEncoding.encode(data, image_size, str(image_output))
-    return map(str, sorted(tmp_path.glob("original-frame*.png")))
+    return list(map(str, sorted(tmp_path.glob("original-frame*.png"))))
 
 
-@pytest.mark.skip(reason="Not implemented yet")
 def test_raw_video(images, tmp_path):
     video_size = (1920, 1080)
     video_output = tmp_path / "video.avi"
@@ -197,7 +195,7 @@ def test_raw_video(images, tmp_path):
 
     file_output.write_bytes(s)
 
-    assert cmp_tar([str(file_input), file_output])
+    assert cmp_tar([str(file_input), str(file_output)])
 
 
 @pytest.mark.skip(reason="Video encoding give a too blurry result")
