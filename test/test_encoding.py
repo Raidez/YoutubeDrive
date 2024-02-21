@@ -1,5 +1,4 @@
 import pytest
-import shutil
 import filecmp
 import hashlib
 from pathlib import Path

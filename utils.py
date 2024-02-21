@@ -2,7 +2,7 @@ import copy
 import math
 import cv2 as cv
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image
 
 
 def biter(b: int, step=1):

@@ -1,6 +1,3 @@
-import re
-import sys
-import glob
 import math
 import pytest
 import numpy as np
@@ -115,7 +112,6 @@ def test_smaller(tmp_path):
     # encode data to image
     ndata = np.array(list(map(int, data)), dtype=np.uint8)
     ndata = np.unpackbits(ndata).reshape(-1, 8)
-    idata = ndata.view()
 
     # use case
     if ndata.size < image_size.size:
@@ -180,7 +176,6 @@ def test_bigger(tmp_path):
     # encode data to image
     ndata = np.array(list(map(int, data)), dtype=np.uint8)
     ndata = np.unpackbits(ndata).reshape(-1, 8)
-    idata = ndata.view()
 
     # use case
     ndatas = list()
@@ -233,7 +228,6 @@ def test_weirder(tmp_path):
     # encode data to image
     ndata = np.array(list(map(int, data)), dtype=np.uint8)
     ndata = np.unpackbits(ndata).reshape(-1, 8)
-    idata = ndata.view()
 
     # use case
     ndatas = list()
